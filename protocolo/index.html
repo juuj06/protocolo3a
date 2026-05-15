@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROTOCOLO</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="top-bar">
+      <span class="brand-dot"></span>
+      <span class="brand-name">PROTOCOLO</span>
+    </header>
+
+    <main class="timer-panel">
+      <div class="timer-panel__headline">
+        <span class="timer-status-label">TEMPO RESTANTE</span>
+
+        <div class="time-config">
+          <div class="input-group">
+            <input id="tempoInput" type="number" min="1" value="60" aria-label="Tempo em minutos" />
+            <span>MINUTOS</span>
+          </div>
+          <button id="defineButton" type="button" class="button button--ghost">DEFINIR</button>
+        </div>
+      </div>
+
+      <div class="timer-grid">
+        <div class="timer-block">
+          <span class="timer-value" id="hourBlock">00</span>
+          <span class="timer-label">HORAS</span>
+        </div>
+        <span class="timer-separator">:</span>
+        <div class="timer-block">
+          <span class="timer-value" id="minuteBlock">00</span>
+          <span class="timer-label">MINUTOS</span>
+        </div>
+        <span class="timer-separator">:</span>
+        <div class="timer-block">
+          <span class="timer-value" id="secondBlock">00</span>
+          <span class="timer-label">SEGUNDOS</span>
+        </div>
+      </div>
+
+      <div class="timer-actions">
+        <button id="startButton" type="button" class="button button--primary">▶ INICIAR</button>
+        <button id="resetButton" type="button" class="button button--secondary">⟲ REINICIAR</button>
+      </div>
+
+      <div class="timer-state">
+        <span class="state-dot" id="stateDot"></span>
+        <span id="statusText">PAUSADO</span>
+      </div>
+
+      <div class="password-panel">
+        <span class="password-label">SENHA</span>
+        <input id="senhaInput" type="password" placeholder="DIGITE UMA SENHA..." aria-label="Senha para parar o temporizador" />
+      </div>
+
+      <p class="panel-footer">SISTEMA DE MONITORAMENTO ATIVO</p>
+    </main>
+  </div>
+
+  <script>
+    const tempoInput = document.getElementById('tempoInput');
+    const senhaInput = document.getElementById('senhaInput');
+    const defineButton = document.getElementById('defineButton');
+    const startButton = document.getElementById('startButton');
+    const resetButton = document.getElementById('resetButton');
+    const hourBlock = document.getElementById('hourBlock');
+    const minuteBlock = document.getElementById('minuteBlock');
+    const secondBlock = document.getElementById('secondBlock');
+    const statusText = document.getElementById('statusText');
+    const stateDot = document.getElementById('stateDot');
+
+    let timerId = null;
+    let configuredSeconds = Number(tempoInput.value) * 60;
+    let configuredPassword = '';
+    let remainingSeconds = configuredSeconds;
+
+    function pad(value) {
+      return String(value).padStart(2, '0');
+    }
+
+    function updateTimerDisplay(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      hourBlock.textContent = pad(hours);
+      minuteBlock.textContent = pad(minutes);
+      secondBlock.textContent = pad(secs);
+    }
+
+    function setStatus(active, text) {
+      statusText.textContent = text;
+      stateDot.classList.toggle('active', active);
+    }
+
+    function defineTimer() {
+      const minutes = Number(tempoInput.value);
+      const password = senhaInput.value.trim();
+
+      if (!minutes || minutes < 1) {
+        alert('Informe um tempo valido.');
+        return;
+      }
+      if (!password) {
+        alert('Informe sua senha.');
+        return;
+      }
+
+      configuredSeconds = minutes * 60;
+      remainingSeconds = configuredSeconds;
+      configuredPassword = password;
+      updateTimerDisplay(remainingSeconds);
+      setStatus(false, `TEMPO DEFINIDO: ${pad(minutes)} MIN`);
+    }
+
+    function stopTimer(reason) {
+      clearInterval(timerId);
+      timerId = null;
+      setStatus(false, reason);
+    }
+
+    function startTimer() {
+      if (!configuredSeconds || !configuredPassword) {
+        alert('Defina tempo e senha antes de iniciar.');
+        return;
+      }
+      if (timerId) return;
+
+      timerId = setInterval(() => {
+        remainingSeconds -= 1;
+        if (remainingSeconds <= 0) {
+          remainingSeconds = 0;
+          updateTimerDisplay(remainingSeconds);
+          stopTimer('TEMPO ESGOTADO');
+          return;
+        }
+        updateTimerDisplay(remainingSeconds);
+      }, 1000);
+
+      setStatus(true, 'ATIVO');
+    }
+
+    function resetTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      remainingSeconds = configuredSeconds;
+      updateTimerDisplay(remainingSeconds);
+      setStatus(false, 'REINICIADO');
+    }
+
+    senhaInput.addEventListener('input', () => {
+      if (timerId && senhaInput.value === configuredPassword) {
+        stopTimer('SENHA CORRETA: TEMPORIZADOR PARADO');
+      }
+    });
+
+    defineButton.addEventListener('click', defineTimer);
+    startButton.addEventListener('click', startTimer);
+    resetButton.addEventListener('click', resetTimer);
+
+    updateTimerDisplay(remainingSeconds);
+    setStatus(false, 'PAUSADO');
+  </script>
+</body>
+</html>
